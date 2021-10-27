@@ -59,7 +59,7 @@ func main() {
 		fileList := []string{}
 
 		for _, file := range files {
-			fileList = append(fileList, file.Name())
+			fileList = append(fileList, SERVER+"/static/"+file.Name())
 			// fmt.Println(file.Name())
 		}
 
