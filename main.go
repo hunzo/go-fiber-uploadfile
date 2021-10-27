@@ -11,6 +11,11 @@ import (
 )
 
 func main() {
+
+	SERVER_NAME := os.Getenv("SERVER_NAME") //http://localhost
+	SERVER_PORT := os.Getenv("SERVER_PORT") //8080
+	SERVER := SERVER_NAME + ":" + SERVER_PORT
+
 	app := fiber.New(fiber.Config{
 		BodyLimit: 10 * 1024 * 1024, //limit 10MB
 	})
@@ -20,7 +25,12 @@ func main() {
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
-			"info": "upload example",
+			"info":     "upload example",
+			"server":   SERVER,
+			"listfile": "/listfiles",
+			"upload":   "POST /upload",
+			"delete":   "DELETE /delete/:filename",
+			"clear":    "GET /clear",
 		})
 	})
 
@@ -82,7 +92,7 @@ func main() {
 			})
 		}
 
-		fileURL := fmt.Sprintf("http://localhost:8080/static/%s", _File)
+		fileURL := fmt.Sprintf("%s/static/%s", SERVER, _File)
 
 		return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 			"success":          true,
@@ -108,6 +118,46 @@ func main() {
 		return c.JSON(fiber.Map{
 			"success": true,
 			"message": "file: " + filename + " has been deleted.",
+		})
+	})
+
+	app.Get("/clear", func(c *fiber.Ctx) error {
+		directry := "./uploads/"
+
+		dirRead, err := os.Open(directry)
+
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"success":  false,
+				"messages": err.Error(),
+			})
+		}
+
+		files, err := dirRead.ReadDir(0)
+
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"success":  false,
+				"messages": err.Error(),
+			})
+		}
+
+		var files_remove []string
+
+		for index := range files {
+			file := files[index]
+			fileName := file.Name()
+			filePath := directry + fileName
+
+			os.Remove(filePath)
+			files_remove = append(files_remove, filePath)
+			fmt.Printf("remove file: %s\n", filePath)
+		}
+
+		return c.JSON(fiber.Map{
+			"success":      true,
+			"message":      "clear file",
+			"remove_files": files_remove,
 		})
 	})
 
